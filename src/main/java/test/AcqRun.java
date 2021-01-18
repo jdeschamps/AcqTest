@@ -33,7 +33,7 @@ public class AcqRun implements Runnable{
 		
 		runTime(timeSuffix);
 		
-	/*	try {
+		try {
 			Thread.sleep(3000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -47,7 +47,7 @@ public class AcqRun implements Runnable{
 			e.printStackTrace();
 		}
 		
-		runSnap(timeSuffix);*/
+		runSnap(timeSuffix);
 	}
 
 	
