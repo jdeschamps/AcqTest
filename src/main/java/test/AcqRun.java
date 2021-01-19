@@ -32,7 +32,7 @@ public class AcqRun implements Runnable{
 		
 		runTime(timeSuffix);
 		
-	/*	try {
+		try {
 			Thread.sleep(3000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -46,7 +46,7 @@ public class AcqRun implements Runnable{
 			e.printStackTrace();
 		}
 		
-		runSnap(timeSuffix);*/
+		runSnap(timeSuffix);
 	}
 
 	
@@ -54,13 +54,17 @@ public class AcqRun implements Runnable{
 		Builder seqBuilder = new SequenceSettings.Builder();
 		seqBuilder.save(true);
 		seqBuilder.timeFirst(true);
-		seqBuilder.usePositionList(false);
 		seqBuilder.root(path);
 		seqBuilder.prefix(NAME+timeSuffix+SNAP);
 		seqBuilder.numFrames(1);
 		seqBuilder.intervalMs(0);
 		seqBuilder.shouldDisplayImages(true);
+		seqBuilder.useAutofocus(false);
+		seqBuilder.useChannels(false);
+		seqBuilder.useCustomIntervals(false);
 		seqBuilder.useFrames(true);
+		seqBuilder.usePositionList(false);
+		seqBuilder.useSlices(false);
 		
 		// run acquisition
 		AcquisitionManager acqManager = studio.acquisitions();
@@ -90,13 +94,17 @@ public class AcqRun implements Runnable{
 		Builder seqBuilder = new SequenceSettings.Builder();
 		seqBuilder.save(true);
 		seqBuilder.timeFirst(true);
-		seqBuilder.usePositionList(false);
 		seqBuilder.root(path);
 		seqBuilder.prefix(NAME+timeSuffix+TIME);
 		seqBuilder.numFrames(150);
 		seqBuilder.intervalMs(0);
 		seqBuilder.shouldDisplayImages(true);
+		seqBuilder.useAutofocus(false);
+		seqBuilder.useChannels(false);
+		seqBuilder.useCustomIntervals(false);
 		seqBuilder.useFrames(true);
+		seqBuilder.usePositionList(false);
+		seqBuilder.useSlices(false);
 		
 		// runs acquisition
 		AcquisitionManager acqManager = studio.acquisitions();		
@@ -126,17 +134,21 @@ public class AcqRun implements Runnable{
 		Builder seqBuilder = new SequenceSettings.Builder();
 		seqBuilder.save(true);
 		seqBuilder.slicesFirst(true);
-		seqBuilder.usePositionList(false);
 		seqBuilder.root(path);
 		seqBuilder.prefix(NAME+timeSuffix+ZSTACK);
 		seqBuilder.numFrames(1);
 		seqBuilder.intervalMs(0);
 		seqBuilder.shouldDisplayImages(true);
-		seqBuilder.useSlices(true);
+		seqBuilder.sliceZBottomUm(-2.);
+		seqBuilder.sliceZStepUm(1.);
+		seqBuilder.sliceZTopUm(2.);
 		seqBuilder.relativeZSlice(true);
-		seqBuilder.sliceZBottomUm(-1.);
-		seqBuilder.sliceZStepUm(0.1);
-		seqBuilder.sliceZTopUm(1.);
+		seqBuilder.useAutofocus(false);
+		seqBuilder.useChannels(false);
+		seqBuilder.useCustomIntervals(false);
+		seqBuilder.useFrames(false);
+		seqBuilder.usePositionList(false);
+		seqBuilder.useSlices(true);
 		
 		// run acquisition
 		AcquisitionManager acqManager = studio.acquisitions();
