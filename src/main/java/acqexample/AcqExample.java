@@ -1,4 +1,4 @@
-package main.java.test;
+package main.java.acqexample;
 
 
 import java.io.File;
@@ -12,7 +12,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.plugin.SciJavaPlugin;
 
 @Plugin(type = MenuPlugin.class)
-public class AcqTest implements MenuPlugin, SciJavaPlugin {
+public class AcqExample implements MenuPlugin, SciJavaPlugin {
 
 	private static Studio studio_;
 	

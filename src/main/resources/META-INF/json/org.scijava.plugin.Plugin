@@ -1,1 +1,1 @@
-{"class":"test.Acq","values":{"description":".","name":"Acq","priority":0.0,"type":"org.micromanager.MenuPlugin"}}
+{"class":"acqexample.AcqExample","values":{"description":".","name":"Acq","priority":0.0,"type":"org.micromanager.MenuPlugin"}}
