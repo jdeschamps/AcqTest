@@ -12,6 +12,7 @@ import org.micromanager.acquisition.SequenceSettings.Builder;
 import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
+import org.micromanager.data.Metadata;
 import org.micromanager.display.DisplayWindow;
 
 import mmcorej.CMMCore;
@@ -198,8 +199,9 @@ public class AcqRun implements Runnable{
 
 			CMMCore core = studio.core();
 			try {
+				Metadata.Builder metadata = studio.data().getMetadataBuilder();
 				core.startSequenceAcquisition(122, 0, true);
-				
+
 				int curFrame = 0;
 				try {
 					while ((core.getRemainingImageCount() > 0 || core.isSequenceRunning(core.getCameraDevice()))) {
@@ -207,7 +209,7 @@ public class AcqRun implements Runnable{
 							TaggedImage tagged = core.popNextTaggedImage();
 
 							// Convert to an Image at the desired time point
-							Image image = studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), null);
+							Image image = studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), metadata.build());
 							store.putImage(image);
 							curFrame++;
 						} else {
