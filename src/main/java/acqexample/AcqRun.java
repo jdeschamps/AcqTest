@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import mmcorej.Configuration;
+import mmcorej.PropertySetting;
+import org.micromanager.PropertyMap;
+import org.micromanager.PropertyMaps;
 import org.micromanager.Studio;
 import org.micromanager.acquisition.AcquisitionManager;
 import org.micromanager.acquisition.SequenceSettings;
@@ -13,10 +17,12 @@ import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
 import org.micromanager.data.Metadata;
+import org.micromanager.data.internal.DefaultMetadata;
 import org.micromanager.display.DisplayWindow;
 
 import mmcorej.CMMCore;
 import mmcorej.TaggedImage;
+import org.micromanager.internal.MMStudio;
 
 
 public class AcqRun implements Runnable{
@@ -24,7 +30,8 @@ public class AcqRun implements Runnable{
 	public static String TIME = "_time";
 	public static String SNAP = "_snap";
 	public static String ZSTACK = "_zstack";
-	public static String NAME = "exp_test_";
+	public static String STREAN = "_stream";
+	public static String NAME = "Acq_test_";
 	
 	private String path;
 	private Studio studio;
@@ -41,7 +48,7 @@ public class AcqRun implements Runnable{
 		runTime(timeSuffix);
 		
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -57,7 +64,7 @@ public class AcqRun implements Runnable{
 		runZStack(timeSuffix);
 		
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -111,7 +118,7 @@ public class AcqRun implements Runnable{
 		seqBuilder.timeFirst(true);
 		seqBuilder.root(path);
 		seqBuilder.prefix(NAME+timeSuffix+TIME);
-		seqBuilder.numFrames(150);
+		seqBuilder.numFrames(50);
 		seqBuilder.intervalMs(0);
 		seqBuilder.shouldDisplayImages(true);
 		seqBuilder.useAutofocus(false);
@@ -154,7 +161,7 @@ public class AcqRun implements Runnable{
 		seqBuilder.intervalMs(0);
 		seqBuilder.shouldDisplayImages(true);
 		seqBuilder.sliceZBottomUm(-2.);
-		seqBuilder.sliceZStepUm(1.);
+		seqBuilder.sliceZStepUm(0.5);
 		seqBuilder.sliceZTopUm(2.);
 		seqBuilder.relativeZSlice(true);
 		seqBuilder.useAutofocus(false);
@@ -191,16 +198,17 @@ public class AcqRun implements Runnable{
 		// creates store
 		Datastore store;
 		try {
-			store = studio.data().createMultipageTIFFDatastore(path+File.separator+timeSuffix+"_stream", false, false);
+			String savePath  = path+File.separator+NAME+timeSuffix+STREAN;
+			store = studio.data().createMultipageTIFFDatastore(savePath, true, false);
 
 			// display and coordinate builder
 			DisplayWindow display = studio.displays().createDisplay(store);
 			Coords.Builder cb = studio.data().getCoordsBuilder().z(0).c(0).p(0).t(0);
 
 			CMMCore core = studio.core();
+			AcquisitionManager acqManager = studio.getAcquisitionManager();
 			try {
-				Metadata.Builder metadata = studio.data().getMetadataBuilder();
-				core.startSequenceAcquisition(122, 0, true);
+				core.startSequenceAcquisition(50, 0, true);
 
 				int curFrame = 0;
 				try {
@@ -208,8 +216,12 @@ public class AcqRun implements Runnable{
 						if (core.getRemainingImageCount() > 0) {
 							TaggedImage tagged = core.popNextTaggedImage();
 
+							// Hacky: build metada
+							Metadata metadata = acqManager.generateMetadata(studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), null), true);
+
 							// Convert to an Image at the desired time point
-							Image image = studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), metadata.build());
+							Image image = studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), metadata);
+
 							store.putImage(image);
 							curFrame++;
 						} else {
@@ -222,7 +234,6 @@ public class AcqRun implements Runnable{
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
-
 
 			// close store
 			store.close();
