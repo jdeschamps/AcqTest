@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import mmcorej.Configuration;
 import mmcorej.PropertySetting;
@@ -13,11 +15,7 @@ import org.micromanager.Studio;
 import org.micromanager.acquisition.AcquisitionManager;
 import org.micromanager.acquisition.SequenceSettings;
 import org.micromanager.acquisition.SequenceSettings.Builder;
-import org.micromanager.data.Coords;
-import org.micromanager.data.Datastore;
-import org.micromanager.data.Image;
-import org.micromanager.data.Metadata;
-import org.micromanager.data.internal.DefaultMetadata;
+import org.micromanager.data.*;
 import org.micromanager.display.DisplayWindow;
 
 import mmcorej.CMMCore;
@@ -30,7 +28,7 @@ public class AcqRun implements Runnable{
 	public static String TIME = "_time";
 	public static String SNAP = "_snap";
 	public static String ZSTACK = "_zstack";
-	public static String STREAN = "_stream";
+	public static String STREAM = "_stream";
 	public static String NAME = "Acq_test_";
 	
 	private String path;
@@ -43,35 +41,54 @@ public class AcqRun implements Runnable{
 	
 	@Override
 	public void run() {
-		String timeSuffix = new SimpleDateFormat("mmss").format(new Date());
-		
-		runTime(timeSuffix);
-		
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		runStreamMode(timeSuffix);
+		//runMultipleAcq();
 
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		runZStack(timeSuffix);
-		
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		runSnap(timeSuffix);
+		runMultipleMetadata();
 	}
 
+	private void runMultipleMetadata() {
+		String timeSuffix = new SimpleDateFormat("mmss").format(new Date());
+
+		//runStreamMode(timeSuffix, MetadataApproach.SIMPLE);
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		runStreamMode(timeSuffix, MetadataApproach.MANUAL);
+	}
+
+	private void runMultipleAcq(){
+		String timeSuffix = new SimpleDateFormat("mmss").format(new Date());
+
+		runTime(timeSuffix);
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		runStreamMode(timeSuffix, MetadataApproach.MANUAL);
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		runZStack(timeSuffix);
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		runSnap(timeSuffix);
+	}
 	
 	private void runSnap(String timeSuffix) {
 		Builder seqBuilder = new SequenceSettings.Builder();
@@ -192,13 +209,20 @@ public class AcqRun implements Runnable{
 			e.printStackTrace();
 		}
 	}
-	
-	private void runStreamMode(String timeSuffix) {
+
+	private void runStreamMode(String timeSuffix, MetadataApproach metadataMethod) {
 		// creates store
 		Datastore store;
 		try {
-			String savePath  = path+File.separator+NAME+timeSuffix+STREAN;
+			Map<String, String> propertyMap = new HashMap<>();
+
+			String name = NAME+timeSuffix+STREAM+"_"+metadataMethod.n;
+			String savePath  = path+File.separator+name;
 			store = studio.data().createMultipageTIFFDatastore(savePath, true, false);
+
+			// system metadata
+			int numImages = 50;
+			store.setSummaryMetadata(generateSummaryMetadata(studio, path, name, numImages));
 
 			// display and coordinate builder
 			DisplayWindow display = studio.displays().createDisplay(store);
@@ -206,20 +230,29 @@ public class AcqRun implements Runnable{
 
 			CMMCore core = studio.core();
 			AcquisitionManager acqManager = studio.getAcquisitionManager();
+			int curFrame = 0;
 			try {
-				core.startSequenceAcquisition(50, 0, true);
+				core.startSequenceAcquisition(numImages, 0, true);
 				Metadata metadata = studio.data().getMetadataBuilder().build();
 
-				int curFrame = 0;
 				try {
 					while ((core.getRemainingImageCount() > 0 || core.isSequenceRunning(core.getCameraDevice()))) {
 						if (core.getRemainingImageCount() > 0) {
 							TaggedImage tagged = core.popNextTaggedImage();
 
 							// Convert to an Image at the desired time point
-							Image image = studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), generateMetadata(studio, metadata));
+							Image image;
+							switch(metadataMethod){
+								case DEFAULT:
+									image = studio.data().convertTaggedImage(tagged);
+									store.putImage(image.copyAtCoords(cb.time(curFrame).build()));
+									store.putImage(image);
 
-							store.putImage(image);
+								case MANUAL:
+									image = studio.data().convertTaggedImage(tagged, cb.time(curFrame).build(), generateMetadata(studio, metadata));
+									store.putImage(image);
+							}
+
 							curFrame++;
 						} else {
 							core.sleep(5);
@@ -237,6 +270,33 @@ public class AcqRun implements Runnable{
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+	}
+
+	private enum MetadataApproach{
+		DEFAULT(0),
+		MANUAL(1);
+
+		private int n;
+
+		MetadataApproach(int n){
+			this.n = n;
+		}
+	}
+
+	private SummaryMetadata generateSummaryMetadata(Studio studio, String path, String name, int n){//Map<String, Object> properties){
+
+		SummaryMetadata defaultSM = studio.acquisitions().generateSummaryMetadata();
+		SummaryMetadata.Builder smBuilder = defaultSM.copyBuilder();
+
+		// stacks dimensions
+		Coords coords = defaultSM.getIntendedDimensions();
+		smBuilder.intendedDimensions(coords.copyBuilder().t(n).c(1).p(1).z(1).build());
+
+		// others
+		smBuilder.prefix(name);
+		smBuilder.directory(path);
+
+		return smBuilder.build();
 	}
 
 	/*
