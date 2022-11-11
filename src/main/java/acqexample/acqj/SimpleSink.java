@@ -36,7 +36,7 @@ public class SimpleSink implements DataSink{
 		if (image != null) {
 			if (image.tags != null && image.pix != null) {
 				anything = true;
-				System.out.println("[sink] got image "+counter);
+				System.out.println("[sink] got image " + image.hashCode() +", " +counter);
 				counter++;
 			}
 		}

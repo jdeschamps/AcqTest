@@ -27,7 +27,7 @@ public class SimpleProcessor implements TaggedImageProcessor {
 					}
 
 					sink.add(newImage);
-					System.out.println("[proc] pass on image " + counter);
+					System.out.println("[proc] pass on image " + newImage.hashCode() +", " + counter);
 					counter++;
 				}
 			}

@@ -70,8 +70,9 @@ public class AcqRun implements Runnable
 		
 		try {
 			Thread.sleep(500);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 		acq.submitEventIterator(list.iterator());
 
