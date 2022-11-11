@@ -49,5 +49,11 @@
 			<version>2.0.0-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.micro-manager.acqengj</groupId>
+			<artifactId>AcqEngJ</artifactId>
+			<version>0.16.0</version>
+			<scope>provided</scope>
+		</dependency>
   </dependencies>
 </project>
